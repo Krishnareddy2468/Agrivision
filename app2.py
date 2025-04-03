@@ -5,33 +5,8 @@ from flask_cors import CORS
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-from torchvision import transforms
 import google.generativeai as genai
 from dotenv import load_dotenv
-import torch
-import requests
-import cv2
-from ultralytics import YOLO
-from IPython import display
-display.clear_output()
-from ultralytics import YOLO
-from PIL import Image
-import  io
-import os
-import traceback
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import tensorflow as tf
-import numpy as np
-from PIL import Image
-import google.generativeai as genai
-from dotenv import load_dotenv
-
-from IPython.display import display, Image
-
-
-model = YOLO("//Users//krishnareddy//Downloads//GOOGLE DEVS//farmer bot//PlantFruitapp//backend//runs//detect//train3//weights//best.pt")  # Update path if needed
-
 
 # Load environment variables from .env (if using)
 load_dotenv()
@@ -40,14 +15,7 @@ app = Flask(__name__)
 CORS(app)  # Allow frontend to communicate with backend
 
 # -----------------------
-# Plant Disease Pr
-# 
-# 
-# 
-# 
-# 
-# 
-#ediction
+# Plant Disease Prediction
 # -----------------------
 
 # Load the trained plant disease model (update the path as needed)
@@ -111,57 +79,6 @@ health_suggestions = {
     'Tomato___healthy': "No issues detected. Continue regular care and monitoring."
 }
 
-@app.route("/predict_media", methods=["POST"])
-def predict_media():
-    if "file" not in request.files:
-        return jsonify({"error": "No file provided"}), 400
-
-    file = request.files["file"]
-    filename = file.filename.lower()
-
-    # ** Image Processing **
-    if filename.endswith(('.png', '.jpg', '.jpeg')):
-        try:
-            image = Image.open(io.BytesIO(file.read())).convert("RGB")  # Read image properly
-            results = model(image)
-            count = len(results[0].boxes)  # Count detected objects
-
-            return jsonify({"prediction": f"Detected {count} coconuts"})
-        except Exception as e:
-            print(f"Error processing image: {str(e)}")
-            return jsonify({"error": str(e)}), 500
-
-    # ** Video Processing **
-    elif filename.endswith(('.mp4', '.avi', '.mov', '.mkv')):
-        try:
-            temp_video_path = "temp_video.mp4"
-            file.save(temp_video_path)
-
-            cap = cv2.VideoCapture(temp_video_path)
-            total_count = 0
-            frame_count = 0
-            frame_interval = 30  # Process one frame per 30 frames
-
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                
-                frame_count += 1
-                if frame_count % frame_interval == 0:
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    results = model(frame_rgb)
-                    total_count += len(results[0].boxes)
-                    total_count1 = total_count - 366 # Count detected objects
-
-            cap.release()
-            return jsonify({"prediction": f"Total detected coconuts: {total_count1}"})
-        except Exception as e:
-            print(f"Error processing video: {str(e)}")
-            return jsonify({"error": str(e)}), 500
-
-    else:
-        return jsonify({"error": "Unsupported file type"}), 400
 def preprocess_image(image):
     """Preprocess the uploaded image for model prediction."""
     img = Image.open(image).convert("RGB")  # Ensure image is in RGB format
@@ -247,28 +164,8 @@ def chat():
     except Exception as e:
         traceback.print_exc()  # Print the full error traceback for debugging
         return jsonify({"error": f"Chatbot failed: {str(e)}"}), 500
-
-@app.route("/weather", methods=["GET"])
-def weather():
-    # Example: Get weather for a hard-coded city (you can update to dynamic)
-    city = request.args.get("city", "vijayawada")
-    api_key = os.getenv("OPENWEATHER_API_KEY")  # set your API key in .env
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
-    resp = requests.get(url)
-    return jsonify(resp.json())
-
-
-# Preprocessing function for images (adjust the size and normalization as per your model training)
-preprocess = transforms.Compose([
-    transforms.Resize((640, 640)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
-])
-
-
-
-
+    
+    
 
 if __name__ == "__main__":
     app.run(debug=True)

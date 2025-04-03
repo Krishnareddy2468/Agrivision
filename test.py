@@ -1,16 +1,27 @@
-import os
-import google.generativeai as genai
-from dotenv import load_dotenv
+import torch
+from ultralytics import YOLO
 
-load_dotenv()
-gemini_key = os.getenv("GEMINI_API_KEY")
-if not gemini_key:
-    raise ValueError("GEMINI_API_KEY not set!")
-genai.configure(api_key=gemini_key)
-gemini_model = genai.GenerativeModel('gemini-2.0-flash')
+# Load the YOLO model (best.pt)
+model = YOLO("//Users//krishnareddy//Downloads//GOOGLE DEVS//farmer bot//PlantFruitapp//backend//models//best.pt")
 
-try:
-    test_response = gemini_model.generate_content("Hello, how are my tomato plants?")
-    print("Test response:", test_response.text)
-except Exception as e:
-    print("Error calling Gemini API:", e)
+# Set model to evaluation mode
+model.model.eval()
+
+# Create a dummy input with shape (1, 3, 640, 640)
+dummy_input = torch.randn(1, 3, 640, 640)
+
+# Export the underlying model (model.model) to ONNX
+onnx_path = "best.onnx"
+torch.onnx.export(
+    model.model, 
+    dummy_input, 
+    onnx_path, 
+    export_params=True,
+    opset_version=11,  # Use a compatible opset version
+    do_constant_folding=True,
+    input_names=["input"],
+    output_names=["output"],
+    dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
+)
+
+print("ONNX export successful:", onnx_path)
